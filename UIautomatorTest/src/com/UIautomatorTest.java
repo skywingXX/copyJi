@@ -27,7 +27,7 @@ public class UIautomatorTest extends UiAutomatorTestCase {
 
 	public void testDemo() throws UiObjectNotFoundException, RemoteException,
 			IOException {
-		new CopyJi().fudu(yanjiu,1*20*1000);
+		new CopyJi().fudu(yanjiu,20*1000+Math.round(Math.random()*60*1000));
 	}
 	
 	void guaJi(){

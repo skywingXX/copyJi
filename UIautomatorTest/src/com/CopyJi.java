@@ -40,14 +40,14 @@ public class CopyJi extends UiAutomatorTestCase {
 		
 
 		while (true) {
-			sleep(5*1000);
-			System.out.println(sdf.format(new Date())+" loop!!!!!!!!!!!!");
+			sleep(3*1000);
+			//System.out.println(sdf.format(new Date())+" loop!!!!!!!!!!!!");
 
 			//取text元素，如果没有就continue
 			UiObject uioabs = getDescUiO(0);
 			if (null==uioabs||!uioabs.exists()) {
-				System.out.println("!!!!warn: uio4 not exits");
-				oImgCount++;
+				//System.out.println("!!!!warn: uio4 not exits");
+				//oImgCount++;
 				continue;
 			}
 
