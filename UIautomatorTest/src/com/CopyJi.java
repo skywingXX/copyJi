@@ -2,7 +2,12 @@ package com;
 
 import inputHelp.Utf7ImeHelper;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.Socket;
+import java.net.UnknownHostException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -10,7 +15,6 @@ import java.util.Random;
 
 import android.os.RemoteException;
 
-import com.android.uiautomator.core.UiDevice;
 
 import com.android.uiautomator.core.UiObject;
 import com.android.uiautomator.core.UiObjectNotFoundException;
@@ -20,7 +24,10 @@ import com.android.uiautomator.testrunner.UiAutomatorTestCase;
 import com.db.TxtHelper;
 
 public class CopyJi extends UiAutomatorTestCase {
-
+	static String serverIP = "192.168.0.150";
+	
+	
+	//复读主方法， 主要是获取元素，再获取语句，进行转换后发送
 	public void fudu(String chat, long timeLoop) throws RemoteException,
 			UiObjectNotFoundException, IOException {
 		// UiDevice device = getUiDevice();
@@ -28,7 +35,8 @@ public class CopyJi extends UiAutomatorTestCase {
 		// device.wakeUp();
 		// assertTrue("screenOn: can't wakeup", device.isScreenOn());
 
-		String text = "", desct = "", desc = "", desc2 = "";
+		String text = "", desct = "", desc = "", desc2 = "" ,textF = "";
+		
 		sleep(1000);
 
 		TxtHelper txtHelper = new TxtHelper();
@@ -44,7 +52,7 @@ public class CopyJi extends UiAutomatorTestCase {
 			//System.out.println(sdf.format(new Date())+" loop!!!!!!!!!!!!");
 
 			//取text元素，如果没有就continue
-			UiObject uioabs = getDescUiO(0);
+			UiObject uioabs = getDescUiO(2);
 			if (null==uioabs||!uioabs.exists()) {
 				//System.out.println("!!!!warn: uio4 not exits");
 				//oImgCount++;
@@ -53,8 +61,7 @@ public class CopyJi extends UiAutomatorTestCase {
 
 
 			//打印text元素有多少子元素
-				System.out.println("%%% uio4 getChildCount: "
-						+ uioabs.getChildCount());
+				//System.out.println("%%% uio4 getChildCount: "+ uioabs.getChildCount());
 				
 				//循环取元素，判断哪个是别人说的text
 				for (int i = 0; i < uioabs.getChildCount(); i++) {
@@ -63,19 +70,25 @@ public class CopyJi extends UiAutomatorTestCase {
 
 						text = uioabs.getChild(new UiSelector().index(i))
 								.getText();
+						System.out.println("原话："+text);
 						text = text.replace("@", "at");
 						//如果已经复读过，就不复读了
 						//如果没复读就加入库里面
+						
 						if(txtHelper.isExist(text)){
-							System.out.println("!!text exist!!");
+							System.out.println(sdf.format(new Date())+ "!!text exist!!");
 							continue;
 						}else{
+							txtHelper.insertMsg(text);
+							
+							//使用中文语言服务器的summary方法进行转换
+							textF = summary(text);
 							txtHelper.insertMsg(text);
 						}
 					
 						//text = strRandom(text);
-						sendText(text);
-						System.out.println("~~~~文本是："+text);
+						sendText(textF);
+						System.out.println(sdf.format(new Date())+"转换后的文本是："+textF);
 						count++;
 						System.out.println("$$$ Times:  " + count);
 						continue;
@@ -143,15 +156,16 @@ public class CopyJi extends UiAutomatorTestCase {
 						"android.widget.AbsListView").index(1));
 				if(uio3.exists()){
 					UiObject uio4 ;
-					if(!uio3.getChild(new UiSelector().className(
+					if(uio3.getChild(new UiSelector().className(
 							"android.widget.RelativeLayout").index(index)).exists()){
 						uio4 = uio3.getChild(new UiSelector().className(
-								"android.widget.RelativeLayout").index(2));
-					}else{
+								"android.widget.RelativeLayout").index(index));
+					}else if(uio3.getChild(new UiSelector().className(
+							"android.widget.RelativeLayout").index(index+1)).exists()){
 					
 						 uio4 = uio3.getChild(new UiSelector().className(
-							"android.widget.RelativeLayout").index(3));
-					}
+							"android.widget.RelativeLayout").index(index+1));
+					}else return null;
 					return uio4;
 				}else return null;
 			}else return null;
@@ -200,5 +214,39 @@ public class CopyJi extends UiAutomatorTestCase {
 					.clickAndWaitForNewWindow();
 		}
 	}
-
+	
+public static String summary(String text) throws UnknownHostException, IOException{
+		
+		//向服务器端发送请求，服务器IP地址和服务器监听的端口号
+		Socket client = new Socket(serverIP, 4242);
+		
+                  //通过printWriter 来向服务器发送消息
+		PrintWriter printWriter = new PrintWriter(client.getOutputStream());
+		//System.out.println("连接已建立...");
+                  
+                  //发送消息
+		printWriter.println(text);
+		
+		printWriter.flush();
+		
+		//InputStreamReader是低层和高层串流之间的桥梁
+		//client.getInputStream()从Socket取得输入串流
+		InputStreamReader streamReader = new InputStreamReader(client.getInputStream());
+		
+		//链接数据串流，建立BufferedReader来读取，将BufferReader链接到InputStreamReder
+		BufferedReader reader = new BufferedReader(streamReader);
+		String advice =reader.readLine();
+		
+		
+		//System.out.println("接收到服务器的消息 ："+advice);
+		reader.close();
+		
+		if(advice.startsWith("["))
+			advice = advice.substring(1);
+		if(advice.endsWith("]"))
+			advice = advice.substring(0, advice.length()-1);
+		
+		return advice;
+	}
+	
 }
