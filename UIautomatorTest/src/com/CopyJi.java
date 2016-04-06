@@ -83,7 +83,7 @@ public class CopyJi extends UiAutomatorTestCase {
 							
 							//使用中文语言服务器的summary方法进行转换
 							textF = summary(text);
-							txtHelper.insertMsg(text);
+							txtHelper.insertMsg(textF);
 						}
 					
 						//text = strRandom(text);
